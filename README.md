@@ -1,11 +1,11 @@
 # swf_2023_parcel_delivery
 ### 팀명 : 아바라 ☕
 
-### 팀원 : 장아라, 한경현 
+### 팀원 : 장아라, 한경현 👩‍❤️‍👨
 
 ### 주제 : Web 3.0 mass Adaption 
 
-### 프로젝트명 : Delivery system using blockchain 
+### 프로젝트명 : Delivery system using blockchain 📦
 
 ### 서비스 소개
   블록체인 기술을 활용하여 개인 정보를 안전하게 보호하고, 신뢰성 있는 택배 시스템을 제공하는 서비스로 개인정보 보호와 데이터 무결성을 우선적으로 고려하여 고객에게 투명하고 안전한 배송 프로세스를 제공한다. 
