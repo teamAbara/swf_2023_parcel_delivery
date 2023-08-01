@@ -47,16 +47,6 @@ function Navbar() {
                   </h1>
                 </Link>
               </Col>{" "}
-              <Col span={2} offset={1}>
-                <Link to={"/CourierInquiry"}>
-                  <h1
-                    className="fonts"
-                    style={{ color: "black", fontSize: "20px" }}
-                  >
-                    고객소리함
-                  </h1>
-                </Link>
-              </Col>{" "}
             </Row>
           </Col>
           <Col span={1} style={{ textAlign: "right", paddingRight: "20px" }}>

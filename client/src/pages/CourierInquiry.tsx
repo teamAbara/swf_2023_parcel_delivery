@@ -1,81 +1,105 @@
 import { useEffect, useState } from "react";
-
+import { moduleAddress } from "../store/module";
+import { client } from "../store/client";
 import { AptosClient } from "aptos";
 import type { MenuProps } from "antd";
+import { useWallet } from "@aptos-labs/wallet-adapter-react";
 
 import { Row, Col, Input } from "antd";
-export const moduleAddress =
-  "0xa604279e6129beb5fa225673daa13f0fa87095e9a576687d1924120a7777b2be";
-export const NODE_URL = "https://fullnode.testnet.aptoslabs.com";
-export const client = new AptosClient(NODE_URL);
+import { Space, Table, Tag } from "antd";
+import type { ColumnsType } from "antd/es/table";
 function CourierInquiry() {
+  const [task, setTask] = useState<DataType[]>([]);
   /*  from */
-  const [from_name, setFromName] = useState("");
-  const [from_phone_number1_1, setFromPhoneNumber1_1] = useState("010");
-  const [from_phone_number1_2, setFromPhoneNumber1_2] = useState("");
-  const [from_phone_number1_3, setFromPhoneNumber1_3] = useState("");
-  const [from_phone_number2_1, setFromPhoneNumber2_1] = useState("");
-  const [from_phone_number2_2, setFromPhoneNumber2_2] = useState("");
-  const [from_phone_number2_3, setFromPhoneNumber2_3] = useState("");
-  const [daumAddress, setDaumAddress] = useState("");
+  interface DataType {
+    key: string;
+    parcel_id: string;
+    from_address: string;
+    to_address: string;
+    parcel_progress: String;
+  }
 
-  const [from_email, setFromEmail] = useState("");
-  const [from_email2, setFromEmail2] = useState("");
+  const columns: ColumnsType<DataType> = [
+    {
+      title: "Id",
+      dataIndex: "parcel_id",
+      key: "parcel_id",
+      render: text => <a>{text}</a>,
+    },
 
-  /* to  */
-  const [to_name, setToName] = useState("");
-  const [to_phone_number1_1, setToPhoneNumber1_1] = useState("");
-  const [to_phone_number1_2, setToPhoneNumber1_2] = useState("");
-  const [to_phone_number1_3, setToPhoneNumber1_3] = useState("");
-  const [to_phone_number2_1, setToPhoneNumber2_1] = useState("");
-  const [to_phone_number2_2, setToPhoneNumber2_2] = useState("");
-  const [to_phone_number2_3, setToPhoneNumber2_3] = useState("");
+    {
+      title: "보내는사람",
+      dataIndex: "from_address",
+      key: "from_address",
+    },
+    {
+      title: "받는사람",
+      dataIndex: "to_address",
+      key: "to_address",
+    },
+    {
+      title: "현황",
+      dataIndex: "parcel_progress",
+      key: "parcel_progress",
+      render: text => (
+        <a>
+          {text == "1"
+            ? "집화처리"
+            : text == "2"
+            ? "간선상차"
+            : text == "3"
+            ? "간선하차"
+            : text == "4"
+            ? "배송출고"
+            : text == "5"
+            ? "배송완료"
+            : null}
+        </a>
+      ),
+    },
+    {
+      title: "Action",
+      key: "action",
+      render: (i, record) => (
+        <Space size="middle">
+          <a href={`/item/${record.parcel_id}`}>상세보기</a>
+        </Space>
+      ),
+    },
+  ];
 
-  const [daumAddress2, setDaumAddress2] = useState("");
-  /*물품정보 */
-  const [box_name, setBoxName] = useState("");
-  const [box_num, setBoxNum] = useState();
-  /* */
+  const [tasksArr, setTaskArr] = useState<any>([]);
 
-  const [loading, setLoading] = useState(false);
-  const [open, setOpen] = useState(false);
-  const [open2, setOpen2] = useState(false);
+  const { account, signAndSubmitTransaction } = useWallet();
+  const genRandomKey = async () => {
+    if (!account) return [];
 
-  const onCompletePost = (data: any) => {
-    setDaumAddress(data.address);
+    const todoListResource = await client.getAccountResource(
+      moduleAddress,
+      `${moduleAddress}::example::ParcelList`
+    );
+    const taskCounter = (todoListResource as any).data?.parcel_counter;
+    console.log(taskCounter);
+    const tableHandle = (todoListResource as any).data.parcels.handle;
+    let tasks = [];
+    let counter = 1;
+    while (counter <= taskCounter) {
+      const tableItem = {
+        key_type: "u64",
+        value_type: `${moduleAddress}::example::Parcel`,
+        key: `${counter}`,
+      };
+      const task = await client.getTableItem(tableHandle, tableItem);
+      tasks.push(task);
+      counter++;
+    }
+    setTask(tasks);
 
-    setOpen(false);
+    // console.log(taskCounter);
   };
-  const onCompletePost2 = (data: any) => {
-    setDaumAddress2(data.address);
-
-    setOpen2(false);
-  };
-  const showModal = () => {
-    setOpen(true);
-  };
-  const showModal2 = () => {
-    setOpen2(true);
-  };
-
-  const handleOk = () => {
-    setLoading(true);
-    setTimeout(() => {
-      setLoading(false);
-      setOpen(false);
-    }, 3000);
-  };
-
-  const handleCancel = () => {
-    setOpen(false);
-  };
-  const onChange = (value: number) => {
-    console.log("changed", value);
-  };
-  const [value, setValue] = useState<string | number | null>("99");
-  const { Search } = Input;
-  const onSearch = (value: string) => console.log(value);
-
+  useEffect(() => {
+    genRandomKey();
+  }, [account]);
   return (
     <>
       <Row style={{ textAlign: "center", backgroundColor: "white" }}>
@@ -90,14 +114,7 @@ function CourierInquiry() {
           <h1>택배조회</h1>
         </Col>
         <Col xs={24} sm={24} md={24} lg={24} xl={24}>
-          {" "}
-          <Search
-            placeholder="input search text"
-            allowClear
-            enterButton="Search"
-            style={{ height: "400px" }}
-            onSearch={onSearch}
-          />
+          <Table columns={columns} dataSource={task} />
         </Col>
       </Row>
     </>

@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect } from "react";
 import logo from "./logo.svg";
 import "./App.css";
 import { Col, Layout, Row } from "antd";
@@ -12,6 +12,7 @@ import Home from "./pages/home";
 import InvoiceRegistration from "./pages/InvoiceRegistration";
 import MyPage from "./pages/MyPage";
 import CourierInquiry from "./pages/CourierInquiry";
+import Item from "./pages/item";
 function App() {
   return (
     <>
@@ -27,6 +28,7 @@ function App() {
             CourierInquiry
             <Route path="/MyPage" element={<MyPage />} />
             <Route path="/CourierInquiry" element={<CourierInquiry />} />
+            <Route path="/item/:id" element={<Item />} />
           </Routes>
         </Layout>
       </BrowserRouter>

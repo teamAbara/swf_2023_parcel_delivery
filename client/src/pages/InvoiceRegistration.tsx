@@ -1,10 +1,15 @@
 import { useEffect, useState } from "react";
 import DaumPostcode from "react-daum-postcode";
 import { Divider } from "antd";
-
+import * as p from "@movingco/prelude";
+import { client } from "../store/client";
+import axios from "axios";
 import { AptosClient } from "aptos";
 import { Dropdown, Space } from "antd";
 import type { MenuProps } from "antd";
+import { useWallet } from "@aptos-labs/wallet-adapter-react";
+
+import { moduleAddress } from "../store/module";
 
 import {
   Row,
@@ -18,11 +23,12 @@ import {
   InputNumber,
   Select,
 } from "antd";
-export const moduleAddress =
-  "0xa604279e6129beb5fa225673daa13f0fa87095e9a576687d1924120a7777b2be";
-export const NODE_URL = "https://fullnode.testnet.aptoslabs.com";
-export const client = new AptosClient(NODE_URL);
+
 function InvoiceRegistration() {
+  const { account, signAndSubmitTransaction } = useWallet();
+
+  const name = "2";
+
   const { TextArea } = Input;
 
   const items: MenuProps["items"] = [
@@ -79,7 +85,7 @@ function InvoiceRegistration() {
   const [from_phone_number2_2, setFromPhoneNumber2_2] = useState("");
   const [from_phone_number2_3, setFromPhoneNumber2_3] = useState("");
   const [daumAddress, setDaumAddress] = useState("");
-
+  const [requst, setRequest] = useState("");
   const [from_email, setFromEmail] = useState("");
   const [from_email2, setFromEmail2] = useState("");
 
@@ -94,8 +100,13 @@ function InvoiceRegistration() {
 
   const [daumAddress2, setDaumAddress2] = useState("");
   /*물품정보 */
-  const [box_name, setBoxName] = useState("");
-  const [box_num, setBoxNum] = useState();
+  const [item_name, setItemnName] = useState("");
+  const [item_price, setItemPrice] = useState("");
+  const [item_size, setItemSize] = useState("");
+  const [item_kg, setItemKg] = useState("");
+  const [item_type, setItemType] = useState("");
+  const [parcel_price, setParcelPrice] = useState("");
+  const [to_account, setToAccount] = useState("");
   /* */
 
   const [loading, setLoading] = useState(false);
@@ -133,8 +144,80 @@ function InvoiceRegistration() {
   const onChange = (value: number) => {
     console.log("changed", value);
   };
-  const [value, setValue] = useState<string | number | null>("99");
+  const [value, setValue] = useState<string | number | null>("0");
+  const create_parcel = async () => {
+    const pinJsonUrl = `https://api.pinata.cloud/pinning/pinJSONToIPFS`;
+    const metadata = {
+      pinataMetadata: {
+        name: from_name + to_name,
+      },
+      pinataContent: {
+        from_name: from_name,
+        from_phone_number:
+          from_phone_number1_1 +
+          "-" +
+          from_phone_number1_2 +
+          "-" +
+          from_phone_number1_3,
+        from_phone_number2:
+          from_phone_number2_1 +
+          "-" +
+          from_phone_number2_2 +
+          "-" +
+          from_phone_number2_3,
+        from_address: daumAddress,
+        from_email: from_email,
+        requst: requst,
+        to_name: to_name,
+        to_phone_number:
+          to_phone_number1_1 +
+          "-" +
+          to_phone_number1_2 +
+          "-" +
+          to_phone_number1_3,
+        to_phone_number2:
+          to_phone_number2_1 +
+          "-" +
+          to_phone_number2_2 +
+          "-" +
+          to_phone_number2_3,
+        to_address: daumAddress2,
+        item_name: item_name,
+        item_price: item_price,
+        item_size: item_size,
+        item_kg: item_kg,
+        item_type: item_type,
+        parcel_price: parcel_price,
+      },
+    };
+    const pinataJsonRsp = await axios.post(pinJsonUrl, metadata, {
+      headers: {
+        pinata_api_key: "ecff7384880af013d08a",
+        pinata_secret_api_key:
+          "2ec0ae314cae497b99909245fa58160db5effe1717c9f656150237986faab45b",
+      },
+    });
 
+    if (!account) return;
+
+    const payload = {
+      type: "entry_function_payload",
+      function: `${moduleAddress}::example::create_task`,
+      type_arguments: [],
+      arguments: [
+        pinataJsonRsp.data.IpfsHash,
+        p.serializers.hexString(moduleAddress),
+        p.serializers.hexString(moduleAddress),
+        p.serializers.hexString(moduleAddress),
+      ],
+    };
+    console.log(payload);
+    console.log(payload);
+    const response = await signAndSubmitTransaction(payload);
+    console.log(response);
+    await client.waitForTransaction(response.hash);
+    window.location.reload();
+  };
   return (
     <>
       <Row style={{ textAlign: "center", backgroundColor: "white" }}>
@@ -280,7 +363,12 @@ function InvoiceRegistration() {
           <h1>요청사항</h1>
         </Col>
         <Col xs={11} sm={11} md={11} lg={11} xl={11}>
-          <TextArea rows={4} />
+          <TextArea
+            rows={4}
+            onChange={e => {
+              setRequest(e.target.value);
+            }}
+          />
         </Col>
         <Col xs={6} sm={6} md={6} lg={6} xl={6}></Col>
         <Divider plain style={{ fontSize: "25px", marginTop: "150px" }}>
@@ -381,31 +469,24 @@ function InvoiceRegistration() {
           <h1>물품명</h1>
         </Col>
         <Col xs={11} sm={11} md={11} lg={11} xl={11}>
-          <Input size="large" />
-        </Col>
-        <Col xs={7} sm={7} md={7} lg={7} xl={7}></Col>
-        <Col xs={6} sm={6} md={6} lg={6} xl={6}>
-          <h1>박스 수량</h1>
-        </Col>
-        <Col xs={3} sm={3} md={3} lg={3} xl={3}>
-          <InputNumber
-            style={{ width: "100%" }}
-            min={1}
+          <Input
             size="large"
-            max={10}
-            value={value}
-            onChange={setValue}
+            onChange={e => {
+              setItemnName(e.target.value);
+            }}
           />
         </Col>
-        <Col xs={1} sm={1} md={1} lg={1} xl={1}>
-          <h1 style={{ fontSize: "25px" }}> BOX</h1>
-        </Col>
-        <Col xs={14} sm={14} md={14} lg={14} xl={14}></Col>
+        <Col xs={7} sm={7} md={7} lg={7} xl={7}></Col>
         <Col xs={6} sm={6} md={6} lg={6} xl={6}>
           <h1>물품가격</h1>
         </Col>
         <Col xs={3} sm={3} md={3} lg={3} xl={3}>
-          <Input size="large" />
+          <Input
+            size="large"
+            onChange={e => {
+              setItemPrice(e.target.value);
+            }}
+          />
         </Col>
         <Col xs={1} sm={1} md={1} lg={1} xl={1}>
           <h1>원</h1>
@@ -414,57 +495,28 @@ function InvoiceRegistration() {
         <Col xs={6} sm={6} md={6} lg={6} xl={6}>
           <h1>물품크기</h1>
         </Col>
+
         <Col xs={3} sm={3} md={3} lg={3} xl={3}>
-          <InputNumber
-            style={{ width: "100%" }}
-            min={1}
+          <Input
             size="large"
-            max={10}
-            value={value}
-            onChange={setValue}
-          />
-        </Col>
-        <Col xs={1} sm={1} md={1} lg={1} xl={1}>
-          <h1>cm</h1>
-        </Col>{" "}
-        <Col xs={3} sm={3} md={3} lg={3} xl={3}>
-          <InputNumber
-            style={{ width: "100%" }}
-            min={1}
-            size="large"
-            max={10}
-            value={value}
-            onChange={setValue}
-          />
-        </Col>
-        <Col xs={1} sm={1} md={1} lg={1} xl={1}>
-          <h1>cm</h1>
-        </Col>{" "}
-        <Col xs={3} sm={3} md={3} lg={3} xl={3}>
-          <InputNumber
-            style={{ width: "100%" }}
-            min={1}
-            size="large"
-            max={10}
-            value={value}
-            onChange={setValue}
+            onChange={e => {
+              setItemSize(e.target.value);
+            }}
           />
         </Col>
         <Col xs={1} sm={1} md={1} lg={1} xl={1}>
           <h1>cm</h1>
         </Col>
-        <Col xs={6} sm={6} md={6} lg={6} xl={6}></Col>
+        <Col xs={14} sm={14} md={14} lg={14} xl={14}></Col>
         <Col xs={6} sm={6} md={6} lg={6} xl={6}>
           <h1>무게</h1>
         </Col>
         <Col xs={3} sm={3} md={3} lg={3} xl={3}>
-          <InputNumber
-            style={{ width: "100%" }}
-            min={1}
+          <Input
             size="large"
-            max={10}
-            value={value}
-            onChange={setValue}
+            onChange={e => {
+              setItemKg(e.target.value);
+            }}
           />
         </Col>
         <Col xs={1} sm={1} md={1} lg={1} xl={1}>
@@ -476,6 +528,7 @@ function InvoiceRegistration() {
         </Col>
         <Col xs={4} sm={4} md={4} lg={4} xl={4}>
           <Select
+            onChange={e => setItemType(e.valueOf)}
             defaultValue="선불"
             style={{ width: "100%" }}
             options={[
@@ -490,7 +543,14 @@ function InvoiceRegistration() {
         </Col>
         <Col xs={8} sm={8} md={8} lg={8} xl={8}></Col>
         <Col xs={8} sm={8} md={8} lg={8} xl={8}>
-          <Button size="large" type="primary" style={{ width: "100%" }}>
+          <Button
+            size="large"
+            type="primary"
+            style={{ width: "100%" }}
+            onClick={e => {
+              create_parcel();
+            }}
+          >
             등록하기
           </Button>
         </Col>

@@ -1,43 +1,26 @@
-import { useEffect, useState } from "react";
-import { Divider } from "antd";
-
-import { AptosClient } from "aptos";
+import * as p from "@movingco/prelude";
 import { useWallet } from "@aptos-labs/wallet-adapter-react";
 import { Layout, Row, Col, Button, Spin, List, Checkbox, Input } from "antd";
-export const moduleAddress =
-  "0xa604279e6129beb5fa225673daa13f0fa87095e9a576687d1924120a7777b2be";
-export const NODE_URL = "https://fullnode.testnet.aptoslabs.com";
-export const client = new AptosClient(NODE_URL);
+import { moduleAddress } from "../store/module";
+import { client } from "../store/client";
+import axios from "axios";
 function Home() {
   const { account, signAndSubmitTransaction } = useWallet();
-  const [newTask, setNewTask] = useState<any>("");
-  useEffect(() => {
-    const genRandomKey = async () => {
-      if (!account) return [];
-      const todoListResource = await client.getAccountResource(
-        account?.address,
-        `${moduleAddress}::counter::Counter`
-      );
-      const taskCounter = (todoListResource as any).data.counter;
-      setNewTask(taskCounter);
-    };
-    genRandomKey();
-  }, [account]);
-  const add = async () => {
+  const update = async () => {
     if (!account) return;
 
     const payload = {
       type: "entry_function_payload",
-      function: `${moduleAddress}::counter::plus_counter`,
+      function: `${moduleAddress}::example::update_list`,
       type_arguments: [],
-      arguments: [],
+      arguments: [p.serializers.hexString(moduleAddress), 1],
     };
-    console.log(payload);
+
     const response = await signAndSubmitTransaction(payload);
-    console.log(response);
     await client.waitForTransaction(response.hash);
     window.location.reload();
   };
+
   return (
     <>
       <Row style={{ textAlign: "center", backgroundColor: "white" }}>
@@ -49,7 +32,9 @@ function Home() {
           xl={24}
           style={{ fontSize: "30px" }}
         >
-          <h1>홈</h1>
+          <a href="/InvoiceRegistration">
+            <Button size="large">택배 예약하러가기</Button>
+          </a>
         </Col>
       </Row>
     </>
